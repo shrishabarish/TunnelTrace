@@ -1,0 +1,174 @@
+=== IMAGE 01 (at P88) ===
+  [P84]: Resolved : 	configure terminal
+  [P85]: no crypto isakmp key INCORRECT_KEY address 198.51.100.2
+  [P86]: crypto isakmp key vpnsecret123 address 198.51.100.2
+  [P87]: end
+
+=== IMAGE 02 (at P102) ===
+  [P98]: 2. Fault 02 (F02): IPsec Phase 2 Transform-Set Mismatch
+  [P99]: Symptom / Diagnostic Evidence:
+  [P100]: Phase 1 successfully established (QM_IDLE), but Phase 2 security associations failed to negotiate or packet counters (#pkts encaps / #pkts decaps) remained at 0, verified via:
+  [P101]: show crypto ipsec sa
+  [P103]: Root Cause: Mismatched encryption/integrity algorithms between the HQ and branch transform-sets (e.g., testing with mismatched parameters like 3DES/MD5 vs AES/SHA).
+  [P104]: Resolution Commands Applied:
+
+=== IMAGE 03 (at P109) ===
+  [P105]: configure terminal
+  [P106]: crypto ipsec transform-set TS-VPN esp-aes esp-sha-hmac
+  [P107]: end
+  [P108]: Verification: Triggered traffic via ping from PC-HQ (192.168.30.10) to PC-Branch (192.168.20.10) to confirm 0% packet loss and active packet counter incrementing.
+
+=== IMAGE 04 (at P110) ===
+  [P106]: crypto ipsec transform-set TS-VPN esp-aes esp-sha-hmac
+  [P107]: end
+  [P108]: Verification: Triggered traffic via ping from PC-HQ (192.168.30.10) to PC-Branch (192.168.20.10) to confirm 0% packet loss and active packet counter incrementing.
+
+=== IMAGE 05 (at P117) ===
+  [P113]: F03:
+  [P114]: ## 1. Fault Description (F03)
+  [P115]: The Problem: The source or destination subnet defined in the crypto ACL on R1-HQ is misconfigured to an incorrect network range.
+  [P116]: The Symptom: Phase 1 (show crypto isakmp sa) will look completely healthy (QM_IDLE), but pings will time out, and your IPsec security associations (show crypto ipsec sa) will show 0 packets processed or fail to trigger because the traffic fails the ACL match criteria.
+  [P118]: ## 2. How to Inject F03
+  [P119]: Let's simulate the fault on R1-HQ by changing the permitted source subnet in the crypto access list to an incorrect network (192.168.99.0/24 instead of 192.168.30.0/24):
+
+=== IMAGE 06 (at P120) ===
+  [P116]: The Symptom: Phase 1 (show crypto isakmp sa) will look completely healthy (QM_IDLE), but pings will time out, and your IPsec security associations (show crypto ipsec sa) will show 0 packets processed or fail to trigger because the traffic fails the ACL match criteria.
+  [P118]: ## 2. How to Inject F03
+  [P119]: Let's simulate the fault on R1-HQ by changing the permitted source subnet in the crypto access list to an incorrect network (192.168.99.0/24 instead of 192.168.30.0/24):
+  [P122]: ## 3. How to Diagnose F03
+
+=== IMAGE 07 (at P126) ===
+  [P122]: ## 3. How to Diagnose F03
+  [P123]: Once injected, run your diagnostic checks on R1-HQ:
+  [P124]: Test Connectivity:
+  [P125]: Go to PC-HQ (192.168.30.10) and ping 192.168.20.10. Notice the request times out.
+  [P127]: Check Phase 1 (ISAKMP):
+  [P128]: Run show crypto isakmp sa  It will show QM_IDLE (Phase 1 is up and fine!).
+
+=== IMAGE 08 (at P129) ===
+  [P125]: Go to PC-HQ (192.168.30.10) and ping 192.168.20.10. Notice the request times out.
+  [P127]: Check Phase 1 (ISAKMP):
+  [P128]: Run show crypto isakmp sa  It will show QM_IDLE (Phase 1 is up and fine!).
+  [P130]: Check IPsec SAs and Traffic Match:
+  [P131]: Run show crypto ipsec sa  Notice that packet counters remain at 0 because no traffic is matching the incorrect ACL rule.
+
+=== IMAGE 09 (at P137) ===
+  [P133]: Run show access-lists to review the active rules bound to your crypto map and spot the subnet discrepancy.
+  [P139]: ## 4. How to Fix F03 (Remediation)
+
+=== IMAGE 10 (at P142) ===
+  [P139]: ## 4. How to Fix F03 (Remediation)
+  [P140]: To resolve the fault and restore normal operation, correct the ACL back to the proper subnet:
+  [P141]: Plaintext
+  [P144]: ## Experiment 4 (F04): Crypto Map Peer IP Mismatch
+
+=== IMAGE 11 (at P157) ===
+  [P153]: Step 2: Test and Diagnose the Symptoms
+  [P154]: Go to PC-HQ (192.168.30.10) and try pinging 192.168.20.10. The pings will time out.
+  [P155]: Return to R1-HQ and check your ISAKMP associations:
+  [P156]: Run show crypto isakmp sa  Notice that Phase 1 fails to initialize or stays completely blank because the router is attempting to negotiate with a non-existent or incorrect peer IP address.
+  [P158]: Run show crypto map  Inspect the active crypto map configuration and spot the incorrect peer address
+
+=== IMAGE 12 (at P159) ===
+  [P155]: Return to R1-HQ and check your ISAKMP associations:
+  [P156]: Run show crypto isakmp sa  Notice that Phase 1 fails to initialize or stays completely blank because the router is attempting to negotiate with a non-existent or incorrect peer IP address.
+  [P158]: Run show crypto map  Inspect the active crypto map configuration and spot the incorrect peer address
+  [P160]: Step 3: Fix F04 & Verify
+  [P161]: Once you've observed the behavior and documented it for your lab report, correct the peer IP back to the proper branch address:
+
+=== IMAGE 13 (at P168) ===
+  [P164]: set peer 198.51.100.2
+  [P165]: end
+  [P166]: Then, clear/reset ISAKMP or send a fresh ping from PC-HQ to verify that the tunnel recovers successfully!
+
+=== IMAGE 14 (at P169) ===
+  [P165]: end
+  [P166]: Then, clear/reset ISAKMP or send a fresh ping from PC-HQ to verify that the tunnel recovers successfully!
+
+=== IMAGE 15 (at P178) ===
+  [P174]: The Problem: The crypto map HQ-TO-BRANCH-MAP is completely unlinked from the outward-facing interface (GigabitEthernet0/1).
+  [P175]: The Symptom: Pings from PC-HQ to PC-Branch will fail and time out completely. Phase 1 (show crypto isakmp sa) will remain completely blank because the router's interface is not intercepting or processing traffic with the crypto engine.
+  [P176]: ## 2. How to Inject F05
+  [P177]: Let's simulate this fault on R1-HQ by removing the crypto map binding from GigabitEthernet0/1:
+  [P179]: ## 3. How to Diagnose F05
+  [P180]: Once injected, run your diagnostic commands on R1-HQ:
+
+=== IMAGE 16 (at P187) ===
+  [P183]: Check ISAKMP Associations:
+  [P184]: Run show crypto isakmp sa  Notice that Phase 1 fails to start up or remains completely empty.
+  [P185]: Check Crypto Map Binding:
+  [P186]: Run show crypto map  Scroll down to the bottom and look at the line Interfaces using crypto map HQ-TO-BRANCH-MAP:. You will notice it is completely blank or missing GigabitEthernet0/1!
+  [P189]: ## 4. How to Fix F05 (Remediation)
+
+=== IMAGE 17 (at P191) ===
+  [P189]: ## 4. How to Fix F05 (Remediation)
+  [P190]: To resolve the fault and rebind the crypto map to the interface:
+
+=== IMAGE 18 (at P192) ===
+  [P189]: ## 4. How to Fix F05 (Remediation)
+  [P190]: To resolve the fault and rebind the crypto map to the interface:
+  [P194]: Experiment 6 (F06): Perfect Forward Secrecy (PFS) Mismatch
+
+=== IMAGE 19 (at P200) ===
+  [P196]: The Problem: PFS is enabled on R1-HQ (requiring a specific Diffie-Hellman group like group2), but the peer branch router (R2-Branch) has PFS disabled or configured for a different DH group.
+  [P197]: The Symptom: Phase 1 (show crypto isakmp sa) will look completely healthy (QM_IDLE), but Phase 2 security associations will fail to establish, or traffic will fail to encrypt/decrypt because the peers disagree on whether (or which) DH group to use for generating fresh session keys.
+  [P198]: ## 2. How to Inject F06
+  [P199]: Let's simulate this fault on R1-HQ by enabling PFS with a specific group on your crypto map, while the branch router does not match it:
+  [P202]: ## 3. How to Diagnose F06
+
+=== IMAGE 20 (at P201) ===
+  [P197]: The Symptom: Phase 1 (show crypto isakmp sa) will look completely healthy (QM_IDLE), but Phase 2 security associations will fail to establish, or traffic will fail to encrypt/decrypt because the peers disagree on whether (or which) DH group to use for generating fresh session keys.
+  [P198]: ## 2. How to Inject F06
+  [P199]: Let's simulate this fault on R1-HQ by enabling PFS with a specific group on your crypto map, while the branch router does not match it:
+  [P202]: ## 3. How to Diagnose F06
+  [P203]: Once injected, run your diagnostics on R1-HQ:
+
+=== IMAGE 21 (at P210) ===
+  [P206]: Check ISAKMP (Phase 1):
+  [P207]: Run show crypto isakmp sa  Shows QM_IDLE (Phase 1 is up!).
+  [P208]: Check IPsec SAs (Phase 2):
+  [P209]: Run show crypto ipsec sa  Look closely at the output; you will see that Phase 2 security associations are failing to negotiate or remain missing/inactive because of the PFS mismatch.
+  [P211]: ## 4. How to Fix F06 (Remediation)
+  [P212]: To resolve the fault and align the PFS settings between both routers (or disable it if not required by your topology, e.g., setting no pfs):
+
+=== IMAGE 22 (at P213) ===
+  [P209]: Run show crypto ipsec sa  Look closely at the output; you will see that Phase 2 security associations are failing to negotiate or remain missing/inactive because of the PFS mismatch.
+  [P211]: ## 4. How to Fix F06 (Remediation)
+  [P212]: To resolve the fault and align the PFS settings between both routers (or disable it if not required by your topology, e.g., setting no pfs):
+
+=== IMAGE 23 (at P214) ===
+  [P211]: ## 4. How to Fix F06 (Remediation)
+  [P212]: To resolve the fault and align the PFS settings between both routers (or disable it if not required by your topology, e.g., setting no pfs):
+  [P216]: Experiment 7 (F07): Crypto Access List (Proxy ID) Mismatch
+
+=== IMAGE 24 (at P223) ===
+  [P219]: The Symptom: Phase 1 (show crypto isakmp sa) will remain completely healthy (QM_IDLE), but Phase 2 will fail because the two routers cannot agree on what traffic is supposed to be encrypted.
+  [P220]: ## 2. How to Inject F07
+  [P221]: Let's simulate this fault on R1-HQ by modifying access list 101 to point to an incorrect source subnet:
+
+=== IMAGE 25 (at P225) ===
+  [P221]: Let's simulate this fault on R1-HQ by modifying access list 101 to point to an incorrect source subnet:
+  [P226]: ## 3. How to Diagnose F07
+  [P227]: Once injected, run your diagnostics on R1-HQ:
+
+=== IMAGE 26 (at P235) ===
+  [P231]: Run show crypto isakmp sa  Shows QM_IDLE (Phase 1 is fine).
+  [P232]: Check Crypto SAs / Debugs:
+  [P233]: Run show crypto ipsec sa  You will notice Phase 2 SAs fail to establish, or you'll see proxy ID mismatch errors in system messages.
+  [P237]: ## 4. How to Fix F07 (Remediation)
+
+=== IMAGE 27 (at P240) ===
+  [P237]: ## 4. How to Fix F07 (Remediation)
+  [P238]: To resolve the fault and restore the correct interesting traffic ACL matching the branch router:
+
+=== IMAGE 28 (at P242) ===
+  [P238]: To resolve the fault and restore the correct interesting traffic ACL matching the branch router:
+
+=== IMAGE 29 (at P251) ===
+  [P247]: The Problem: The transform-set on R1-HQ is misconfigured or uses an algorithm that doesn't match the branch router (for example, R1 expects esp-aes while the branch expects esp-3des or esp-des).
+  [P248]: The Symptom: Phase 1 (show crypto isakmp sa) will remain healthy (QM_IDLE), but Phase 2 security associations will fail to establish because the peers cannot agree on how to encrypt and sign the actual data.
+  [P249]: ## 2. How to Inject F08
+  [P250]: Let's simulate this fault on R1-HQ by changing the transform-set definition to an incompatible algorithm:
+  [P252]: ## 3. How to Diagnose F08
+  [P253]: Once injected, run your diagnostics on R1-HQ:
+

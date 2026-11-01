@@ -1,0 +1,11 @@
+# OS & Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tmp
+*.bak
+~$*
+
+# Scratch build dumps
+scratch/test_save.docx
